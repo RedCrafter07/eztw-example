@@ -90,7 +90,6 @@ export default function Home() {
             <div
               key={index}
               className="rounded-lg border-black border-opacity-25 bg-slate-200 px-4 py-2"
-              onClick={(e) => {}}
             >
               {streamer}
             </div>
