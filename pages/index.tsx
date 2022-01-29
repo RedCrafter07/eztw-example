@@ -1,82 +1,153 @@
 import Head from 'next/head'
+import React, { useEffect, useRef, useState } from 'react'
+
+type StreamerData = {
+  broadcaster_language: string
+  broadcaster_login: string
+  display_name: string
+  game_name: string
+  game_id: string
+  id: string
+  is_live: boolean
+  started_at: string
+  tag_ids: Array<string>
+  thumbnail_url: string
+  title: string
+}
 
 export default function Home() {
+  let [results, setResults] = useState(Array<StreamerData>())
+  let [list, setList] = useState(Array<string>())
+  let searchInput = useRef<HTMLInputElement>(null)
+
+  let timeout: any
+
+  function handleSearch(e: any) {
+    if (e.target.value.length > 3) {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        fetch('/api/search', {
+          headers: {
+            streamer: e.target.value,
+          },
+        })
+          .then((res) => res.json())
+          .then((res) => setResults(res.streamers))
+      }, 1000)
+    } else {
+      setResults([])
+    }
+  }
+
+  function DisplayResults() {
+    return (
+      <div className="rounded-lg bg-slate-300 px-4">
+        {results.length > 0
+          ? results.map((streamer: StreamerData, index: number, array) => {
+              return (
+                <div
+                  key={streamer.broadcaster_login}
+                  className={`${
+                    index + 1 == array.length ? '' : 'border-b'
+                  } border-black border-opacity-25`}
+                >
+                  <ListItem name={streamer.display_name}></ListItem>
+                </div>
+              )
+            })
+          : ''}
+      </div>
+    )
+  }
+
+  function ListItem(props: { name: string }) {
+    return (
+      <a
+        href={`/streamer/${props.name}`}
+        className={`text-black`}
+        onClick={handleClick}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        {props.name}
+      </a>
+    )
+
+    function handleClick(e: any) {
+      // e.preventDefault()
+      if (searchInput && searchInput.current) searchInput.current.value = ''
+      setResults([])
+      let name = e.currentTarget.textContent
+      if (!list.includes(name)) setList([...list, name])
+    }
+  }
+
+  function List() {
+    return (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {list.map((streamer: string, index: number, array) => {
+          return (
+            <div
+              key={index}
+              className="rounded-lg border-black border-opacity-25 bg-slate-200 px-4 py-2"
+              onClick={(e) => {}}
+            >
+              {streamer}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
+    <div className="min-h-screen">
       <Head>
-        <title>Create Next App</title>
+        <title>EzTwitch-Example</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
+      <main>
+        <div className="bg-slate-400 py-10 px-4 text-center text-white lg:px-20">
+          <h1 className="text-6xl font-bold">
+            Welcome to{' '}
+            <a
+              className="text-purple-600"
+              href="https://github.com/Rediverse/EzTwitch"
+            >
+              EzTwitch
+            </a>
+            !
+          </h1>
+          <br></br>
+          <form
+            action="/"
+            onSubmit={(e) => {
+              e.preventDefault()
+            }}
           >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+            <input
+              type="text"
+              name="text"
+              id=""
+              className="w-full rounded-lg bg-slate-300 px-4 py-2 text-black focus:outline-none"
+              placeholder="Username..."
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(' ', '_').toLowerCase()
+                handleSearch(e)
+              }}
+              ref={searchInput}
+              autoComplete="off"
+            />
+          </form>
+          <br />
+          <DisplayResults></DisplayResults>
+        </div>
+        <div className="container mx-auto px-2">
+          <h1 className="text-3xl">Deine Streamer</h1>
+          <List></List>
         </div>
       </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="ml-2 h-4" />
-        </a>
-      </footer>
     </div>
   )
 }
